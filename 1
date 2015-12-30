@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html style="background:#000;">
+<head>
+<meta charset="UTF-8">
+<title>JS: Object.create Polyfill Plus</title>
+<script>
+//noprotect
+(function $closure(finestra){
+ 'use strict';
+
+ function doNothing(){}
+
+ var $w=finestra,
+
+ $d=$w.document,
+ log,dir,clear,warn,
+ $Object=$w.Object,
+
+ $S=$w.String,
+ $SP=(function(o){
+  var e=o.prototype;
+  e.includes=function(a,b){return this.indexOf(a,b>>>0) !== -1;};
+  return e;
+ })($S);
+
+
+ $navigator=$w.navigator,
+ $ua=$navigator.userAgent.toLowerCase(),
+
+
+ support=(function(){
+	var r={},o=$Object,p='setPrototypeOf',g=typeof(o[p]);
+	if(g!=='function'){o[p]=function(e,p){e.__proto__=p;return e;};};
+	g=o[p];
+	r=g(r,null);
+	r.Element='Element' in $w;
+	p='create';
+	if(!(r.propertiesdescriptor=typeof(o[p])==='function')){//provide support for: Object.create:
+		o[p]=function(a,b,skip){
+			var o=g({},a),p,e;
+         if(b){
+			 var N=Number,W,E,C;//defaults: {writable:1,enumerable:1,configurable:1}
+          for(p in b){
+            e=b[p];
+            o[p]=e.value;
+				W=N(e.writable);
+				E=N(e.enumerable);
+				C=N(e.configurable);
+            if(skip!==1 && (W===0||N===0||C==0)){
+              throw Error('property ('+p+') descriptor (writable:'+W+',enumerable'+E+',configurable:'+C+') are not supported');
+            };
+          };
+         };
+			return o;
+		};
+	};
+		//more check here...
+		return r;
+ })(),
+
+
+ $EP=(function(provide){
+	var d, w=$w, p='attachEvent', e=provide.Element?Element.prototype:{};
+	if(p in w && !(p='addEventListeners',w[p])){
+	 provide.IE=
+	 d=$d;
+	 e[p]=w[p]=d[p]=function(s,f){
+	 var o=this;
+	 return o.attachEvent('on'+s,function(evt){
+		var e=evt||w.event,g=function(a,b){var p=a,o=e;o[p]=o[p]||b;};
+		g('target',e.srcElement);
+		g('preventDefault',function(){e.returnValue=false;});
+		g('stopPropagation',function(){e.cancelBubble=true;});
+		g=e.button;
+		e.which=g?g===2?3:g===4?2:g:e.keyCode;
+		f.call(o,e);
+	  });
+	 };
+	 p='removeEventListener';
+	 e[p]=w[p]=d[p]=function(s,f){return this.detachEvent('on'+s,f);};
+	};
+	return e;
+ })(support),
+
+
+
+ Create=$Object.create,
+ RawObject=Create.bind(null,null),
+
+ uid=$closure.uniqueidentifier=RawObject({timeouts:{value:RawObject(),writable:0,enumerable:1,configurable:0}},1),
+
+ $Function=$w.Function,
+ $FP=$Function.prototype,
+
+ $Array=$w.Array,
+ $AP=$Array.prototype,
+
+ bindedcall=(function(a,b){
+  var e=a, s=b.slice;
+  e.bind=e.bind||function(o){
+	var i='prototype',f=this,g=function(){},
+	b=function(){var e=this;return f.apply((e instanceof g)?e:o,i.concat(s.call(arguments)));};
+	o=f[i];
+	if(o){g[i]=o;};
+	b[i]=new g;
+	i=arguments;
+	o=i[0];
+	i=s.call(i,1);
+	return b;
+  };
+  return function(e){return $FP.call.bind(e);};
+ })($FP,$AP),
+
+ //§ Slice=bindedcall($AP.slice)
+
+ forEach=(function(o){
+	var p='forEach', e=o[p]=o[p]||function(f,t){
+	 var o=this, e=$Object(o),i=e.length,l=i>>>0, c=f;
+	  if(i>0){
+		if(typeof(c)==='function'){
+			e=t;i=0;while(i<l){c.call(e,o[i],i,o);i++;};
+		}else{
+			throw new TypeError('each callback is not a function');
+		};
+	  };
+	};
+	return bindedcall(e);
+ })($AP),
+
+ $console=(function(shorthand,consoleusedmeths){//'profile','profileEnd','markTimeline','timeStamp','time','timeEnd','table','assert','count','dirxml','info','debug','trace','exception','error'
+	var o=$w.console, f=forEach, s=shorthand,u=consoleusedmeths,g=doNothing;
+	if(o){
+		f(s,function(p){eval(p+'=function(){var o=$console;o.'+p+'.apply(o,arguments);};');});
+      f(u,function(p){if(!(p in o)){o[p]=g;};});
+	}else{
+	 o=RawObject();
+	 f(s.concat(u),function(p){o[p]=g;});
+    f(s,function(p){eval(p+'=g;');});
+    $w.console=o;
+	};
+	return o;
+ })(['log','dir','clear','warn'],['group','groupCollapsed','groupEnd']),
+
+
+
+
+
+
+
+//?{}:{timeouts:{}},
+
+/*
+
+
+ debounce=function(s,i,a,b){//delay,id,after,before*
+	var n=s*1000,o=$w,p=i,e=o.registered.timeouts;
+	o.clearTimeout(e[p]);
+	if(n>0 && a){
+	 e[p]=o.setTimeout(a,n,o,p,b);//after,delay,win,id,before*
+	}else{
+    delete e[p];
+	};
+ },
+*/
+
+ setGlobalListener=$w.addEventListener,
+ clearGlobalListener=$w.removeEventListener,
+
+ endvar;
+ //script:
+
+dir($EP)
+
+
+ //more...
+ })(window);
+/*
+log();
+dir();
+*/
+</script>
+
+<!-- working --><!-- samples:
+
+document.addEventListener('DOMContentLoaded', function(){
+var myNodeList=document.querySelectorAll('p');
+forEach(myNodeList, function (e) {console.log(e)});
+})
+
+
+  for(var e=o,s,m=['Function','Object'],l=m.length,i=0,f=$Function;i<l;i++){
+	s=m[i];e['type'+s]=f('e','return typeof(e)==="'+s.toLowerCase()+'";');
+  };
+
+
+--><!-- snippets:
+
+(function(){})();
+
+ (function(){
+  var o;
+  return o;
+ })(),
+
+for(var e, i=0, m=arguments, l=m.length; i<l; i++){
+ e=m[i];
+};
+
+
+t.indexOf('s') !== -1;
+
+function(){f.apply(o,arguments);};// skip bind polyfill...
+
+
+ m=arguments
+
+	try{
+
+	}catch(myerror){
+
+	};
+
+-->
+
+
+
+</head>
+<body>
+
+
+
+
+<p>
+
+</p>
+<p>
+sss
+</p>
+<p>
+ssss
+</p>
+
+
+
+
+</body>
+</html>
